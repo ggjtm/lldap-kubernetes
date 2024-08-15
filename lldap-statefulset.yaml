@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   annotations:
     lldap: https://github.com/nitnelave/lldap
@@ -12,8 +12,6 @@ spec:
   selector:
     matchLabels:
       app: lldap
-  strategy:
-    type: Recreate
   template:
     metadata:
       annotations:
@@ -29,17 +27,17 @@ spec:
             - name: LLDAP_JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: lldap-credentials
+                  name: lldap-secrets
                   key: lldap-jwt-secret
             - name: LLDAP_LDAP_BASE_DN
               valueFrom:
                 secretKeyRef:
-                  name: lldap-credentials
+                  name: lldap-secrets
                   key: base-dn
             - name: LLDAP_LDAP_USER_PASS
               valueFrom:
                 secretKeyRef:
-                  name: lldap-credentials
+                  name: lldap-secrets
                   key: lldap-ldap-user-pass
             - name: TZ
               value: CET
@@ -54,8 +52,11 @@ spec:
             - mountPath: /data
               name: lldap-data
       restartPolicy: Always
-      volumes:
-        - name: lldap-data
-          persistentVolumeClaim:
-            claimName: lldap-data
-
+  volumeClaimTemplates:
+    - metadata:
+        name: lldap-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
